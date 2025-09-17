@@ -72,10 +72,10 @@ jobs:
         with:
           name: mtl-release-bin
           path: |
-            'build/'
-            'ecosystem/gstreamer_plugin/builddir/'
-            'FFmpeg/'
-            'tests/tools/RxTxApp/build/'
+            build/
+            ecosystem/gstreamer_plugin/builddir/
+            FFmpeg/
+            tests/tools/RxTxApp/build/
 
   ubuntu-ebpf-xdp-build:
     needs: changes
