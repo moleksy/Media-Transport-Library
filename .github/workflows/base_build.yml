@@ -30,6 +30,7 @@ env:
   TOOLS_BUILD_AND_INSTALL_MTL_MONITORS: 0
   TOOLS_BUILD_AND_INSTALL_MTL_READCAP: 1
   TOOLS_BUILD_AND_INSTALL_MTL_CPU_EMULATOR: 1
+  INSTALL_DIR: ''
 
 permissions:
   contents: read
@@ -62,6 +63,9 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: 'Create temporary install directory'
+        run: 'echo "INSTALL_DIR=$(mktemp -d --tmpdir mtl-XXXXXXXXXX)" >> "$GITHUB_ENV"'
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Build Release
@@ -74,8 +78,8 @@ jobs:
           path: |
             build/
             ecosystem/gstreamer_plugin/builddir/
-            FFmpeg/
             tests/tools/RxTxApp/build/
+            ${{ env.INSTALL_DIR }}/ffmpeg/
 
   ubuntu-ebpf-xdp-build:
     needs: changes
