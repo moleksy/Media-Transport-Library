@@ -76,7 +76,7 @@ build_ffmpeg() {
 		extra_config_flags+="--prefix=${INSTALL_DIR}/ffmpeg/"
 	fi
 
-	./configure --enable-shared --disable-static --enable-nonfree --enable-pic --enable-gpl --enable-libopenh264 --enable-encoder=libopenh264 --enable-mtl $extra_config_flags
+	./configure --enable-shared --disable-static --enable-nonfree --enable-pic --enable-gpl --enable-libopenh264 --enable-encoder=libopenh264 --enable-mtl "${extra_config_flags}"
 	make -j "$(nproc)"
 	sudo make install
 	sudo ldconfig
