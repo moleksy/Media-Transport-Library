@@ -558,7 +558,6 @@ def execute_test(
 
     logger.info(f"RxTxApp Command: {command}")
 
-
     # For 4TX and 8k streams more timeout is needed
     timeout = test_time + 90
     if len(config["tx_sessions"]) >= 4 or any(
@@ -570,12 +569,7 @@ def execute_test(
 
     # Use run() for both local and remote
     cp = run(
-        command,
-        cwd=build,
-        timeout=timeout,
-        testcmd=True,
-        host=host,
-        background=True
+        command, cwd=build, timeout=timeout, testcmd=True, host=host, background=True
     )
 
     if netsniff:
@@ -759,12 +753,7 @@ def execute_perf_test(
     )
 
     cp = run(
-        command,
-        cwd=build,
-        timeout=timeout,
-        testcmd=True,
-        host=host,
-        background=True
+        command, cwd=build, timeout=timeout, testcmd=True, host=host, background=True
     )
 
     if netsniff:
