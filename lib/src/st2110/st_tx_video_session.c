@@ -5,6 +5,7 @@
 #include "st_tx_video_session.h"
 
 #include <math.h>
+#include <rte_prefetch.h>
 
 #include "../datapath/mt_queue.h"
 #include "../mt_log.h"
@@ -40,6 +41,18 @@ static inline void pacing_forward_cursor(struct st_tx_video_pacing* pacing) {
   /* pkt forward */
   pacing->tsc_time_cursor += pacing->trs;
   pacing->ptp_time_cursor += pacing->trs;
+}
+
+#define TV_PREFETCH_OFFSET 1
+
+static inline void tv_prefetch_mbuf_array(struct rte_mbuf** mbufs, unsigned int idx,
+                                          unsigned int total) {
+  unsigned int prefetch_idx = idx + TV_PREFETCH_OFFSET;
+  if (prefetch_idx < total) {
+    struct rte_mbuf* prefetch = mbufs[prefetch_idx];
+    rte_prefetch0(prefetch);
+    rte_prefetch0(rte_pktmbuf_mtod(prefetch, void*));
+  }
 }
 
 static inline uint64_t tv_rl_bps(struct st_tx_video_session_impl* s) {
@@ -1888,6 +1901,9 @@ static int tv_tasklet_frame(struct mtl_main_impl* impl,
   }
 
   for (unsigned int i = 0; i < bulk; i++) {
+    tv_prefetch_mbuf_array(pkts, i, bulk);
+    if (!s->tx_no_chain) tv_prefetch_mbuf_array(pkts_chain, i, bulk);
+    if (send_r) tv_prefetch_mbuf_array(pkts_r, i, bulk);
     st_tx_mbuf_set_priv(pkts[i], &s->st20_frames[s->st20_frame_idx]);
     if (s->st20_pkt_idx >= s->st20_total_pkts) {
       ST_SESSION_STAT_INC(s, port_user_stats, stat_pkts_dummy);
@@ -2088,6 +2104,8 @@ static int tv_tasklet_rtp(struct mtl_main_impl* impl,
   }
 
   for (unsigned int i = 0; i < pkts_bulk; i++) {
+    tv_prefetch_mbuf_array(pkts, i, pkts_bulk);
+    if (send_r) tv_prefetch_mbuf_array(pkts_r, i, pkts_bulk);
     if (s->tx_no_chain) {
       pkts[i] = pkts_rtp[i];
       tv_build_rtp(impl, s, pkts[i]);

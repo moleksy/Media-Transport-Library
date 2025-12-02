@@ -5,6 +5,7 @@
 #include "st_rx_video_session.h"
 
 #include <math.h>
+#include <rte_prefetch.h>
 
 #include "../datapath/mt_queue.h"
 #include "../mt_log.h"
@@ -24,6 +25,18 @@ static int rvs_mgr_update(struct st_rx_video_sessions_mgr* mgr);
 
 static inline struct mtl_main_impl* rv_get_impl(struct st_rx_video_session_impl* s) {
   return s->parent->parent;
+}
+
+#define RV_PREFETCH_OFFSET 1
+
+static inline void rv_prefetch_mbuf_array(struct rte_mbuf** mbufs, uint16_t idx,
+                                          uint16_t total) {
+  uint16_t prefetch_idx = idx + RV_PREFETCH_OFFSET;
+  if (prefetch_idx < total) {
+    struct rte_mbuf* prefetch = mbufs[prefetch_idx];
+    rte_prefetch0(prefetch);
+    rte_prefetch0(rte_pktmbuf_mtod(prefetch, void*));
+  }
 }
 
 static inline uint16_t rv_queue_id(struct st_rx_video_session_impl* s,
@@ -2763,6 +2776,7 @@ static int rv_handle_mbuf(void* priv, struct rte_mbuf** mbuf, uint16_t nb) {
 
   /* now dispatch the pkts to handler */
   for (uint16_t i = 0; i < nb; i++) {
+    rv_prefetch_mbuf_array(mbuf, i, nb);
     if ((s->ops.flags & ST20_RX_FLAG_SIMULATE_PKT_LOSS) && rv_simulate_pkt_loss(s))
       continue;
     if (s->rtcp_rx[s_port]) {
